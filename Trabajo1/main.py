@@ -8,12 +8,12 @@ import math
 
 #########################
 # PARÁMETROS AJUSTABLES #
+#   Y CONSTANTES        #
 #########################
 
 PATH = "imagenes/" # Carpeta de imágenes
 IM_PATH = PATH + "plane.bmp" # Path de la imagen que uso como ejemplo
 COLOR, GRIS = cv.IMREAD_COLOR, cv.IMREAD_GRAYSCALE
-
 
 
 ########################
@@ -33,6 +33,7 @@ def leeimagen(filename, flagColor):
 
   return cv.imread(filename, flagColor)
 
+N = 1
 def pintaI(im, titulo = "Imagen"):
   """Visualiza una matriz de números reales cualquiera
      - im: Imagen a visualizar"""
@@ -89,8 +90,9 @@ def ap1A(im, sX, sY = 0, tam = 0):
   Argumentos opcionales:
    - tam: tamaño del kernel. Por defecto lo calcula GaussianBlur.
    - sY: sigma en la dirección Y. Por defecto igual a sX
-  """
 
+  Devuelve: La imagen con la máscara aplicada
+  """
   return cv.GaussianBlur(im, (tam,tam), sX, sigmaY = sY)
 
 def ejemplo1A(im):
@@ -119,8 +121,9 @@ def ap1B(dx,dy,tam):
   - dx: orden de derivación respecto de x
   - dy: orden de derivación respecto de y
   - tam: tamaño del kernel
-  """
 
+  Devuelve: Vectores de derivada
+  """
   return cv.getDerivKernels(dx,dy,tam)
 
 def ejemplo1B():
@@ -146,21 +149,22 @@ def ap1C(im, tam, tipoBorde):
   Argumentos posicionales:
   - im: Imagen a la que aplicar la máscara
   - tam: Tamaño de la máscara
-  - tipoBorde: Tipo de borde"""
-  im_blur = ap1A(im, 5)
+  - tipoBorde: Tipo de borde
+  Devuelve: Imagen con la máscara aplicada"""
+  im_blur = ap1A(im, 0, tam = tam) # Aplica alisado gaussiano
   return cv.Laplacian(im, -1, ksize = tam, borderType = tipoBorde, delta = 50)
 
 def ejemplo1C(im):
   """Ejemplo de apartado 1C con distintos tamaños"""
 
-  bordes  = [cv.BORDER_REPLICATE, cv.BORDER_CONSTANT]
-  tams    = [3, 5]
-  nombres = {cv.BORDER_REPLICATE: "replica", cv.BORDER_CONSTANT: "constante"}
+  bordes  = [cv.BORDER_REPLICATE, cv.BORDER_CONSTANT] # Tipos de bordes
+  tams    = [3, 5] # Tamaños de kernel
+  nombres = {cv.BORDER_REPLICATE: "replica", cv.BORDER_CONSTANT: "constante"} # Nombres para imprimir
 
   ims = [(im, "Original")]
   for tam in tams:
     for borde in bordes:
-      ims.append((ap1C(im, tam, borde),
+      ims.append((ap1C(im, tam, borde), # Crea lista de imágenes para cada combinación
              "tam = {}, {}".format(tam, nombres[borde])))
   pintaMI(*ims)
 
@@ -180,6 +184,8 @@ def ap2A(im, vX, vY, tipoBorde = cv.BORDER_REPLICATE):
 
   Argumentos opcionales:
   - tipoBorde: El tipo de borde. Por defecto reflejado.
+  Devuelve:
+  La imagen con la convolución aplicada
   """
 
   return cv.sepFilter2D(im,-1,vX[::-1], vY[::-1], borderType = tipoBorde)
@@ -192,7 +198,7 @@ def ejemplo2A(im):
   g5 = cv.getGaussianKernel(5,-1)
   g10 = cv.getGaussianKernel(10,-1)
 
-  # Filtro de alisado
+  # Filtro de caja de unos
   alisado = lambda n: np.array([1]*n)/n
 
   pintaMI((im, "original"),
@@ -211,7 +217,8 @@ def ap2B(im, tam, var):
   Argumentos posicionales:
   - im: La imagen a convolucionar
   - tam: Tamaño del kernel
-  - var: Variable por la que derivar ('x' o 'y')"""
+  - var: Variable por la que derivar ('x' o 'y')
+  Devuelve: Imagen con primera derivada parcial aplicada"""
 
   # Obtenemos los kernels 1D a partir del apartado 1B
   if var == 'x':
@@ -237,7 +244,9 @@ def ap2C(im, tam, var):
   Argumentos posicionales:
   - im: La imagen a convolucionar
   - tam: Tamaño del kernel
-  - var: Variable por la que derivar ('x' o 'y')"""
+  - var: Variable por la que derivar ('x' o 'y')
+  Devuelve:
+  Imagen con la segunda derivada parcial aplicada"""
 
   # Obtenemos los kernels 1D a partir del apartado 1B
   if var == 'x':
@@ -249,9 +258,7 @@ def ap2C(im, tam, var):
 
 def ejemplo2C(im):
   """Ejemplos apartado 2C con distintos tamaños"""
-
-
-  pintaMI((im, "Original"),
+  pintaMI(#(im, "Original"),
          (ap2C(im, 3, 'x'), "dx, tam = 3"),
          (ap2C(im, 3, 'y'), "dy, tam = 3"),
          (ap2C(im, 5, 'x'), "dx, tam = 5"))
@@ -264,20 +271,21 @@ def ap2D(im, tipoBorde, niveles = 4):
   - im: La imagen a la que generar la pirámide gaussiana
   - tipoBorde: Tipo de borde a utilizar
   Argumentos opcionales:
-  - niveles: Número de niveles de la pirámide gaussiana (4 por defecto)"""
-
+  - niveles: Número de niveles de la pirámide gaussiana (4 por defecto)
+  Devuelve: Lista de imágenes que forman la pirámide gaussiana"""
   piramide = [im]
   for n in range(niveles-1):
-    piramide.append(
-      cv.pyrDown(piramide[-1], borderType = tipoBorde))
+    # Crea el siguiente nivel de la pirámide reduciendo el último (piramide[-1]) con pyrDown
+    piramide.append(cv.pyrDown(piramide[-1], borderType = tipoBorde))
 
   return piramide
 
 def ejemplo2D(im):
   """Ejemplos apartado 2D"""
-
-  piramide = ap2D(im, cv.BORDER_REPLICATE)
-  muestraMI(piramide, "Pirámide gaussiana")
+  piramide = ap2D(im, cv.BORDER_REFLECT)
+  muestraMI(piramide, "Pirámide gaussiana con borde reflejado")
+  piramide2 = ap2D(im, cv.BORDER_REPLICATE)
+  muestraMI(piramide2, "Pirámide gaussiana con borde replicado")
 
 
 
@@ -289,21 +297,21 @@ def ap2E(im, tipoBorde, niveles = 4):
   - im: La imagen a la que generar la pirámide laplaciana
   Argumentos opcionales:
   - niveles: Número de niveles de la pirámide laplaciana (4 por defecto)
+  Devuelve:
+  Lista de imágenes que forman la pirámide laplaciana
   """
-  p_gauss = ap2D(im, tipoBorde, niveles = niveles)
+  p_gauss = ap2D(im, tipoBorde, niveles = niveles+1)
   pir_lap   = []
 
-  for n in range(niveles-1):
+  for n in range(niveles):
     pir_lap.append(
-      cv.subtract(p_gauss[n],
-                  cv.pyrUp(p_gauss[n+1], dstsize = (p_gauss[n].shape[1], p_gauss[n].shape[0])
-                  )) + 50)
-  pir_lap.append(p_gauss[-1])
+      cv.subtract(p_gauss[n], # Resta al nivel n
+                  cv.pyrUp(p_gauss[n+1], dstsize = (p_gauss[n].shape[1], p_gauss[n].shape[0])) # el nivel n+1
+                  ) + 50) # Suma una constante para visualizarlo
   return pir_lap
 
 def ejemplo2E(im):
   """Ejemplos apartado 2E"""
-
   piramide = ap2E(im, cv.BORDER_REPLICATE)
   muestraMI(piramide, "Pirámide laplaciana")
 
@@ -313,9 +321,12 @@ def ejemplo2E(im):
 ###############
 
 def ap3(im1, im2, sigma1, sigma2):
-  """Construye una imagen híbrida a partir de dos imágenes con las mismas dimensiones"""
-  lo_pass = ap1A(im1, sigma1)
-  hi_pass = cv.subtract(im2, ap1A(im2, sigma2))
+  """Construye una imagen híbrida a partir de dos imágenes con las mismas dimensiones
+  Argumentos posicionales:
+  - im1, im2: Imágenes para frecuencias bajas y altas
+  - sigma1, sigma2: Parámetros sigma para frecuencias bajas y altas"""
+  lo_pass = ap1A(im1, sigma1) # Frecuencias bajas de im1
+  hi_pass = cv.subtract(im2, ap1A(im2, sigma2)) # Frecuencias altas de im2
   return [lo_pass, hi_pass, cv.addWeighted(lo_pass, 0.5, hi_pass, 0.5, 0)]
 
 def ejemplo3():
@@ -325,7 +336,7 @@ def ejemplo3():
   im_c1, im_c2 = leeimagen(PATH + "dog.bmp", GRIS), leeimagen(PATH + "cat.bmp", GRIS)
 
   muestraMI(ap3(im_a1, im_a2, 3, 5), "Avión - Pájaro")
-  muestraMI(ap3(im_b1, im_b2, 3, 5), "Bicicleta - Moto")
+  muestraMI(ap3(im_b1, im_b2, 9, 5), "Bicicleta - Moto")
   muestraMI(ap3(im_c1, im_c2, 9, 9), "Gato - Perro")
 
 
@@ -338,14 +349,17 @@ def ejemplo3():
 def bonus1(sigma):
   """Calcula el vector máscara gaussiano
   Argumentos posicionales:
-  - sigma: Parámetro σ de la función de densidad de la gaussiana"""
+  - sigma: Parámetro σ de la función de densidad de la gaussiana
+  Devuelve:
+  - Vector máscara gaussiano"""
 
-  longitud = 1 + 2*int(3*sigma)
+  longitud = 1 + 2*int(3*sigma) # Calcula la longitud
   mid = int(3*sigma)
 
   f = lambda x: math.exp(-0.5*x*x/(sigma*sigma))
   mascara = np.zeros(longitud)
 
+  # Rellena la máscara muestreando
   for n in range(longitud):
     x = n - mid
     mascara[n] = f(x)
@@ -353,33 +367,42 @@ def bonus1(sigma):
   return mascara/np.sum(mascara)
 
 def ejemploB1():
+  """Ejemplo 1 BONUS con σ = 0.5"""
   print("  Máscara gaussiana con σ = 0.5: {v}".format(v = bonus1(0.5)))
 
 ## 2
 
 
-def bonus2(mascara, orig):
-  """Calcula convolución 1D de vector con señal.
+def correl(mascara, orig):
+  """Calcula correlación 1D de vector con señal.
   Argumentos posicionales:
   - mascara: vector-máscara
   - orig: Señal original
+  Devuelve:
+  - Señal con correlación
   """
 
   if len(orig.shape) == 2: # si es multibanda
     NCH = orig.shape[1]
     return np.stack((bonus2(mascara, orig[::,j]) for j in range(NCH)), axis = 1)
 
-  nueva = np.zeros(orig.shape)
+  nueva = np.zeros(orig.shape) # Crea nueva imagen
   N, M = len(orig), (len(mascara)-1)//2
+  extended = np.concatenate((orig[::-1], orig, orig[::-1]))
 
   for i in range(N):
-    for j in range(-M, M+1):
-      k = i-j
-      if k < 0 or k >= N:
-        k = N - 1 - (k % N)
-      nueva[i] += mascara[j+M]*orig[k]
-    nueva[i] = max(min(nueva[i], 255), 0)
+    nueva[i] = np.dot(mascara, extended[i-M+N:i+M+N+1])
   return nueva
+
+def bonus2(mascara, orig):
+  """Calcula correlación 1D de vector con señal.
+  Argumentos posicionales:
+  - mascara: vector-máscara
+  - orig: Señal original
+  Devuelve:
+  - Señal convolucionada
+  """
+  return correl(mascara[::-1], orig)
 
 def ejemploB2():
   """Ejemplo 2 BONUS (convolución 1D)"""
@@ -396,6 +419,8 @@ def bonus3(vX, vY, im):
   - vX: Vector-máscara en dirección X
   - vY: Vector-máscara en dirección Y
   - im: Imagen a convolucionar
+  Devuelve:
+  - Imagen convolucionada
   """
   if not isBW(im): # Si tiene 3 canales
     canales  = cv.split(im)
@@ -403,10 +428,13 @@ def bonus3(vX, vY, im):
 
   nueva = im.copy()
   N, M = im.shape
-  for j in range(M):
-    nueva[::,j] = bonus2(vX, nueva[::, j])
-  for i in range(N):
-    nueva[i,::] = bonus2(vY, nueva[i, ::])
+  rVX = vX[::-1]
+  rVY = vY[::-1]
+
+  for j in range(M): # Aplica convolución por columnas
+    nueva[::,j] = correl(rVX, nueva[::, j])
+  for i in range(N): # Aplica convolución por filas
+    nueva[i,::] = correl(rVY, nueva[i, ::])
 
   return nueva
 
@@ -414,30 +442,36 @@ def ejemploB123(im):
   """Combina ejemplos para mostrar funcionalidad en ejercicios bonus 1, 2 y 3"""
   vGauss = bonus1(1)
   gauss  = bonus3(vGauss, vGauss, im)
-
-  pintaMI((im, "Original"),
-          (gauss, "Gaussiana propia sigma = 3"))
+  pintaMI((im, "Original"), (gauss, "Gaussiana propia sigma = 3"))
 
 
 ## 3 (bis)
 
 def pirAbajo(im):
-  """Versión propia de cv.pyrDown para ejercicio bonus 3 bis"""
-
+  """Versión propia de cv.pyrDown para ejercicio bonus 3 bis
+  Argumentos posicionales:
+  - im: Imagen original
+  Devuelve:
+  Imagen reducida"""
   vGauss = bonus1(1)
   im_bor = bonus3(vGauss, vGauss, im)
-  forma = (im.shape[0]//2, im.shape[1]//2)
+  forma = (im.shape[0]//2, im.shape[1]//2) # Calcula forma de nueva imagen
   nueva_im = np.zeros(forma, np.uint8)
 
   for i in range(forma[0]):
     for j in range(forma[1]):
-      nueva_im[i,j] = im_bor[2*i, 2*j]
+      nueva_im[i,j] = im_bor[2*i, 2*j] # Coge uno de cada dos
 
   return nueva_im
 
 
 def bonus3b(im, niveles):
-  """Pirámide Gaussiana de 5 niveles con imágenes híbridas"""
+  """Pirámide Gaussiana de 5 niveles con imágenes híbridas
+  Argumentos posicionales:
+  - im: Imagen para la que calcular la pirámide gaussiana
+  - niveles: Número de niveles de la pirámide gaussiana
+  Devuelve:
+  Lista de imágenes que forman la pirámide gaussiana"""
   piramide = [im]
   for n in range(niveles-1):
     piramide.append(pirAbajo(piramide[-1]))
@@ -445,26 +479,34 @@ def bonus3b(im, niveles):
 
 def ejemploB3b(im):
   """Ejemplo 3 bis BONUS"""
-  piramide = bonus3b(im, 5)
+  im_c1, im_c2 = leeimagen(PATH + "dog.bmp", GRIS), leeimagen(PATH + "cat.bmp", GRIS)
+  lo, hi, hibrida = ap3(im_c1, im_c2, 9, 9) # Consigue híbridas de ap3
+  piramide = bonus3b(hibrida, 5)
   muestraMI(piramide, "Pirámide gaussiana")
 
 ## 4
 
 def bonus4(im1, im2, sigma1, sigma2):
-  """Construye una imagen híbrida a color a partir de dos imágenes con las mismas dimensiones"""
+  """Construye una imagen híbrida a color a partir de dos imágenes con las mismas dimensiones
+  Argumentos posicionales:
+  - im1, im2: Imágenes de las que sacamos frecuencias bajas y altas
+  - sigma1, sigma2: Parámetros de alisado gaussiano"""
   vG1, vG2 = bonus1(sigma1), bonus1(sigma2)
-  lo_pass = bonus3(vG1, vG1, im)
-  hi_pass = cv.subtract(im2, bonus3(vG2, vG2, im2))
-  return [lo_pass, hi_pass, cv.addWeighted(lo_pass, 0.5, hi_pass, 0.5, 0)]
+  lo_freq = bonus3(vG1, vG1, im1)
+  hi_freq = im2.astype(float) - bonus3(vG2, vG2, im2).astype(float)
+  hi_freq[hi_freq < 0] = 0
+  hi_freq = hi_freq.astype('uint8')
+  return [lo_freq, hi_freq, cv.addWeighted(lo_freq, 0.5, hi_freq, 0.5, 0)]
 
 def ejemploB4():
-  im_a1, im_a2 = leeimagen(PATH + "plane.bmp", COLOR), leeimagen(PATH + "bird.bmp", COLOR)
+  """Ejemplo 4 BONUS"""
+  im_a1, im_a2 = leeimagen(PATH + "bird.bmp", COLOR), leeimagen(PATH + "plane.bmp", COLOR)
   im_b1, im_b2 = leeimagen(PATH + "bicycle.bmp", COLOR), leeimagen(PATH + "motorcycle.bmp", COLOR)
-  im_c1, im_c2 = leeimagen(PATH + "cat.bmp", COLOR), leeimagen(PATH + "dog.bmp", COLOR)
+  im_c1, im_c2 = leeimagen(PATH + "dog.bmp", COLOR), leeimagen(PATH + "cat.bmp", COLOR)
 
   muestraMI(bonus4(im_a1, im_a2, 3, 5), "Avión - Pájaro")
-  muestraMI(bonus4(im_b1, im_b2, 3, 5), "Bicicleta - Moto")
-  muestraMI(bonus4(im_c1, im_c2, 10, 10), "Gato - Perro")
+  muestraMI(bonus4(im_b1, im_b2, 9, 5), "Bicicleta - Moto")
+  muestraMI(bonus4(im_c1, im_c2, 9, 9), "Gato - Perro")
 
 
 def main():
@@ -474,40 +516,39 @@ def main():
   # Usar imágenes de un sólo canal para 2
   im_bn = leeimagen(IM_PATH, GRIS)
 
-  #pintaI(im)
+  pintaI(im)
 
-  # print("Ejemplo 1A: (en visor de imágenes)")
-  # ejemplo1A(im)
-  # print("Ejemplo 1B:")
-  # ejemplo1B()
-  # espera()
+  print("Ejemplo 1A: (en visor de imágenes)")
+  ejemplo1A(im)
+  print("Ejemplo 1B:")
+  ejemplo1B()
+  espera()
   print("Ejemplo 1C: (en visor de imágenes)")
   ejemplo1C(im_bn)
   print("Ejemplo 2A: (en visor de imágenes)")
   ejemplo2A(im_bn)
-  # print("Ejemplo 2B: (en visor de imágenes)")
-  # ejemplo2B(im_bn)
-  # print("Ejemplo 2C: (en visor de imágenes)")
-  # ejemplo2C(im_bn)
-  # print("Ejemplo 2D: (en visor de imágenes)")
-  # ejemplo2D(im_bn)
-  #print("Ejemplo 2E: (en visor de imágenes)")
-  #ejemplo2E(im_bn)
+  print("Ejemplo 2B: (en visor de imágenes)")
+  ejemplo2B(im_bn)
+  print("Ejemplo 2C: (en visor de imágenes)")
+  ejemplo2C(im_bn)
+  print("Ejemplo 2D: (en visor de imágenes)")
+  ejemplo2D(im_bn)
+  print("Ejemplo 2E: (en visor de imágenes)")
+  ejemplo2E(im_bn)
   print("Ejemplo 3: (en visor de imágenes)")
   ejemplo3()
-  # print("Ejemplo 1 BONUS")
-  # ejemploB1()
-  # espera()
-  # print("Ejemplo 2 BONUS")
-  # ejemploB2()
-  # espera()
-  # print("Ejemplo 1,2 y 3 BONUS (en visor de imágenes)")
-  # print("Tarda unos 4 segundos en aparecer en mi ordenador")
-  # ejemploB123(im)
-  # print("Ejemplo 3 bis BONUS (en visor de imágenes)")
-  # ejemploB3b(im_bn)
-  # print("Ejemplo 4 BONUS (en visor de imágenes)")
-  # ejemplo4()
+  print("Ejemplo 1 BONUS")
+  ejemploB1()
+  espera()
+  print("Ejemplo 2 BONUS")
+  ejemploB2()
+  espera()
+  print("Ejemplo 1,2 y 3 BONUS (en visor de imágenes)")
+  ejemploB123(im)
+  print("Ejemplo 3 bis BONUS (en visor de imágenes)")
+  ejemploB3b(im_bn)
+  print("Ejemplo 4 BONUS (en visor de imágenes)")
+  ejemploB4()
 
 
 
