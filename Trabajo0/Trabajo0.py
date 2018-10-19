@@ -42,9 +42,16 @@ def pintaMI(vim, titulo = "Imágenes"):
   """Visualiza varias imágenes a la vez
   - vim: Secuencia de imágenes"""
 
+  altura = max(im.shape[0] for im in vim)
+
   for i,im in enumerate(vim):
-    if isBW(im):
-      vim[i] = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+    if isBW(im): # Pasar a color
+      vim[i] = cv2.cvtColor(vim[i], cv2.COLOR_GRAY2BGR)
+
+    if im.shape[0] < altura: # Redimensionar imágenes
+      vim[i] = cv2.copyMakeBorder(
+        vim[i], 0, altura - vim[i].shape[0],
+        0, 0, cv2.BORDER_CONSTANT, value = (0,0,0))
 
   imMulti = cv2.hconcat(vim)
   pintaI(imMulti, titulo)
@@ -102,7 +109,9 @@ if __name__ == "__main__":
   print("Modifica píxeles (Ejercicio 4). Resultado mostrado en ejercicio 5")
   # Modifico los píxeles de la mitad superior de la imagen
   modificada = np.copy(imColor)
-  modPixeles(modificada, [(x,y) for x in range(128) for y in range(256)])
+  altura, anchura, _ = modificada.shape
+  modPixeles(modificada,
+             [(x,y) for x in range(int(altura/2)) for y in range(anchura)])
 
   print("Representa imágenes con títulos en una ventana (Ejercicio 5)")
   representaIm(vim + [modificada], tit + ["Imagen modificada"])
