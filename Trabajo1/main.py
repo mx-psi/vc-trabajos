@@ -258,7 +258,7 @@ def ap2C(im, tam, var):
 
 def ejemplo2C(im):
   """Ejemplos apartado 2C con distintos tamaños"""
-  pintaMI(#(im, "Original"),
+  pintaMI((im, "Original"),
          (ap2C(im, 3, 'x'), "dx, tam = 3"),
          (ap2C(im, 3, 'y'), "dy, tam = 3"),
          (ap2C(im, 5, 'x'), "dx, tam = 5"))
@@ -274,7 +274,7 @@ def ap2D(im, tipoBorde, niveles = 4):
   - niveles: Número de niveles de la pirámide gaussiana (4 por defecto)
   Devuelve: Lista de imágenes que forman la pirámide gaussiana"""
   piramide = [im]
-  for n in range(niveles-1):
+  for n in range(niveles):
     # Crea el siguiente nivel de la pirámide reduciendo el último (piramide[-1]) con pyrDown
     piramide.append(cv.pyrDown(piramide[-1], borderType = tipoBorde))
 
@@ -473,7 +473,7 @@ def bonus3b(im, niveles):
   Devuelve:
   Lista de imágenes que forman la pirámide gaussiana"""
   piramide = [im]
-  for n in range(niveles-1):
+  for n in range(niveles):
     piramide.append(pirAbajo(piramide[-1]))
   return piramide
 
@@ -492,11 +492,16 @@ def bonus4(im1, im2, sigma1, sigma2):
   - im1, im2: Imágenes de las que sacamos frecuencias bajas y altas
   - sigma1, sigma2: Parámetros de alisado gaussiano"""
   vG1, vG2 = bonus1(sigma1), bonus1(sigma2)
-  lo_freq = bonus3(vG1, vG1, im1)
+  lo_freq = bonus3(vG1, vG1, im1).astype(float)
   hi_freq = im2.astype(float) - bonus3(vG2, vG2, im2).astype(float)
+
   hi_freq[hi_freq < 0] = 0
+  hibrida = 0.5*lo_freq + 0.5*hi_freq
+
+  hibrida = hibrida.astype('uint8')
+  lo_freq = lo_freq.astype('uint8')
   hi_freq = hi_freq.astype('uint8')
-  return [lo_freq, hi_freq, cv.addWeighted(lo_freq, 0.5, hi_freq, 0.5, 0)]
+  return [lo_freq, hi_freq, hibrida]
 
 def ejemploB4():
   """Ejemplo 4 BONUS"""
