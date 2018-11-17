@@ -329,25 +329,40 @@ def ap3A(ims):
   - Homografía que traslada una imagen al centro del mosaico"""
 
   N = len(ims)
-  height, width, _ = ims[0][0].shape
+  height, width, _ = ims[0].shape
 
-  canvas = np.zeros((height + height//2, N*width, 3))
-
-  M = np.array([[1,0,canvas.shape[1]/2],[0,1,canvas.shape[0]/2],[0,0,1]])
+  canvas = np.zeros((height + height//2, N*width, 3), np.uint8)
+  tx = (canvas.shape[1] - width)/2
+  ty = (canvas.shape[0] - height)/2
+  M = np.array([[1,0,tx],[0,1,ty],[0,0,1]])
   return canvas, M
 
   pass
 
-def a3B(im):
+def ap3B(ims):
   """Definir homografía que lleva cada imagen al mosaico"""
-  pass
-  #  https://docs.opencv.org/3.4.1/d9/d0c/group__calib3d.html#ga4abc2ece9fab9398f2e560d53c8c9780
+  mid = len(ims)//2
 
-def ap3C(ims):
+  homographies = []
+  for n in range(len(ims)):
+    if n != mid:
+      m = n+1 if n < mid else n-1
+      p1, p2 = ap1A(ims[n], "SIFT"), ap1A(ims[m], "SIFT")
+      d1, d2 = ap1C(ims[n], p1, "SIFT"), ap1C(ims[m], p2, "SIFT")
+
+      matches = ap2A_LA2NN(d1, d2) # matches
+      sources = np.array([p1[match.queryIdx].pt for match in matches])
+      dests   = np.array([p2[match.trainIdx].pt for match in matches])
+      homographies.append(cv.findHomography(sources, dests, cv.RANSAC, 1)[0])
+    else:
+      homographies.append(None)
+
+
+  return homographies
+
+def ap3C(im):
   """Trasladar imágenes al mosaico"""
   pass
-# https://docs.opencv.org/3.4.1/d2/de8/group__core__array.html#gad327659ac03e5fd6894b90025e6900a7
-  # https://docs.opencv.org/2.4/modules/imgproc/doc/geometric_transformations.html#void%20warpPerspective(InputArray%20src,%20OutputArray%20dst,%20InputArray%20M,%20Size%20dsize,%20int%20flags,%20int%20borderMode,%20const%20Scalar&%20borderValue)
 
 def ej3(ims):
   """Genera y muestra un mosaico a partir de N = 3 imágenes
@@ -355,15 +370,22 @@ def ej3(ims):
   - ims: Imágenes del mosaico.
          Asumo que las imágenes están ordenadas conforme al mosaico.
   """
-  mid = ims[1][0]
+  mid = len(ims)//2
   canvas, M_canvas = ap3A(ims)
-
   width, height, _ = canvas.shape
-  canvas = cv.warpPerspective(mid, M_canvas, (height, width), dst = canvas)
+  homographies = ap3B(ims)
+
+  for n, im in enumerate(ims):
+    homography = M_canvas
+    if n != mid:
+      for m in range(n,mid, 1 if n < mid else -1):
+        homography = homography @ homographies[m]
+    canvas = cv.warpPerspective(
+      im, homography,
+      (height, width), dst = canvas.copy(),
+      borderMode = cv.BORDER_TRANSPARENT)
 
   pintaI(canvas, "Canvas")
-  print(M_canvas)
-
 
 def main():
   """Llama de forma secuencial a la función de cada apartado."""
@@ -371,16 +393,21 @@ def main():
   yosemite = []
   for n in range(1,8):
     title = "yosemite{n}.jpg".format(n = n)
-    yosemite.append((leeimagen(PATH + title, COLOR), title))
+    yosemite.append(leeimagen(PATH + title, COLOR))
 
   #print("Ejemplo Ejercicio 1:")
-  #ej1ABC(yosemite[:2])
+  #ej1ABC([(yosemite[0], "yosemite0.jpg"), (yosemite[1], "yosemite1.jpg")])
+  #print("Ejemplo Ejercicio 2:")
+  #ej2(yosemite[0], yosemite[1])
 
-  print("Ejemplo Ejercicio 2:")
-  ej2(yosemite[0][0], yosemite[1][0])
+  print("Ejemplo Ejercicio 3:")
+  ej3(yosemite[:4])
 
-  #print("Ejemplo Ejercicio 3:")
-  #ej3(yosemite[:3])
+  mosaico = []
+  for n in range(2,12):
+    title = "mosaico{n:03d}.jpg".format(n = n)
+    mosaico.append(leeimagen(PATH + title, COLOR))
+  ej3(mosaico)
 
 if __name__ == "__main__":
   main()

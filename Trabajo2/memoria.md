@@ -76,7 +76,7 @@ Esta parte está implementada en las funciones `ap2A_BFCC` y `ap2A_LA2NN`, que i
 Los descriptores de cada imagen se guardan en variables del tipo `d_imN` donde `N` es el número de imagen.
 La detección de correspondencias varía en función del método:
 
-Para "BruteForce+crossCheck" utilizamos el matcher `BFMatcher` con el parámetro `crossCheck` activado.
+Para **"BruteForce+crossCheck"** utilizamos el matcher `BFMatcher` con el parámetro `crossCheck` activado.
 Por defecto, este matcher corresponde cada punto con el punto con descriptor más cercano de la otra imagen.
 El parámetro `crossCheck` indica que la correspondencia debe ser en ambos sentidos: dos descriptores 
 $D_1 \in \mathtt{d}_\mathtt{im1},D_2 \in \mathtt{d}_\mathtt{im2}$ se corresponden entre sí si $D_2$ es el 
@@ -87,17 +87,31 @@ matcher = cv.BFMatcher_create(crossCheck = True)
 matches = matcher.match(d_im1, d_im2)
 ```
 
-Para "Lowe-Average-2NN" utilizamos el matcher `FlannBasedMatcher`
+Para **"Lowe-Average-2NN"** utilizamos el matcher `FlannBasedMatcher`. `FlannBasedMatcher` busca los dos vecinos más cercanos de forma aproximada utilizando un árbol k-d.
+A continuación utilizamos los dos vecinos más cercanos para escoger las correspondencias que tengan menos ambigüedad.
+De acuerdo al test dado por Lowe en su paper[@LoweDistinctiveImageFeatures2004a], consideramos que una correspondencia no es ambigua cuando el ratio entre la distancia de esa correspondencia y la segunda no excede un cierto umbral; si la correspondencia es errónea es probable que haya otras correspondencias erróneas cercanas.
+Fijamos el umbral a 0.8 de acuerdo al paper.
 
+Es decir, el código de obtención de correspondencias en este caso es:
+```python
+matcher = cv.FlannBasedMatcher_create()
+matches = matcher.knnMatch(d_im1, d_im2, k = 2)
+
+clear_matches = []
+for best, second in matches:
+  if best.distance/second.distance < ratio:
+    clear_matches.append(best)
+```
 
 ## A) Mostrar correspondencias entre ambas imágenes
 
 La obtención de los puntos clave y sus descriptores se hacen a partir de las funciones `ap1A` y `ap1C` del ejercicio 1. 
 Los puntos se guardan en variables del tipo `p_imN` y los descriptores en variables del tipo `d_imN`.
-El cálculo de las correspondencias se hace con la función correspondiente al método
+El cálculo de las correspondencias se hace con la función correspondiente al método (descritas antes de este apartado).
 
-  
-
+Para dibujarlas utilizamos la función `random.sample` para escoger 100 correspondencias aleatorias sin repetición.
+A continuación, con la función `cv.drawMatches` mostramos en un mismo canvas ambas imágenes con las correspondencias elegidas uniendo los puntos. 
+La flag `cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS` indica que no dibujamos los puntos que no tienen correspondencia.
 
 ## B) Valorar la calidad de los resultados obtenidos
 
