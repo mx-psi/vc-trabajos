@@ -16,6 +16,10 @@ import random
 PATH = "imagenes/" # Carpeta de imágenes
 COLOR, GRIS = cv.IMREAD_COLOR, cv.IMREAD_GRAYSCALE
 
+# Objetos SIFT y SURF con parámetros elegidos
+SIFT = cv.xfeatures2d.SIFT_create(contrastThreshold = 0.04, edgeThreshold = 5)
+SURF = cv.xfeatures2d.SURF_create(hessianThreshold = 200)
+
 ########################
 # FUNCIONES AUXILIARES #
 ########################
@@ -78,26 +82,51 @@ def pintaMI(*parejas):
 
 ## 1 A)
 
-def ap1A(im, tipo,  **kwargs):
+def ap1A(im, tipo):
   """Detecta puntos SIFT o SURF sobre una imagen.
   Argumentos posicionales:
   - im: Imagen
   - tipo: El tipo de detector ("SIFT" o "SURF")
-  Argumentos opcionales:
-  - Cualquiera que podamos pasarle a la función `cv.xfeatures2d.SIFT_create` (o `cv.xfeatures2d.SURF_create`)
   Devuelve:
   - Los puntos detectados
   """
   if tipo == "SIFT":
-    sift   = cv.xfeatures2d.SIFT_create(**kwargs)
-    return sift.detect(im)
+    return SIFT.detect(im)
   elif tipo == "SURF":
-    surf   = cv.xfeatures2d.SURF_create(**kwargs)
-    return surf.detect(im)
+    return SURF.detect(im)
+
 
 def ej1A(im):
-  """Ejemplo de prueba del apartado 1A."""
-  pass
+  """Ejemplo de prueba del apartado 1A.
+  Argumentos posicionales:
+  - im: La imagen sobre la que probamos los distintos detectores"""
+  detectors_SIFT =  [
+    (cv.xfeatures2d.SIFT_create(contrastThreshold = 0.06, edgeThreshold = 8),
+     "SIFT umbrales contraste: 0.06, bordes: 8"),
+    (SIFT,
+     "SIFT umbrales contraste: 0.04, bordes: 5"),
+    (cv.xfeatures2d.SIFT_create(contrastThreshold = 0.02, edgeThreshold = 8),
+     "SIFT umbrales contraste: 0.02, bordes: 8"),]
+
+  ims = []
+  for detector, titulo in detectors_SIFT:
+    keypoints = detector.detect(im)
+    print(titulo, "- Nº de puntos: ", len(keypoints))
+    ims.append((ap1B_draw_circles(im, keypoints, "SIFT"), titulo))
+  pintaMI(*ims)
+
+  detectors_SURF = [
+    (cv.xfeatures2d.SURF_create(hessianThreshold = 50), "SURF umbral hessiana: 50"),
+    (SURF, "SURF umbral hessiana: 200"),
+    (cv.xfeatures2d.SURF_create(hessianThreshold = 400), "SURF umbral hessiana: 400")]
+
+  ims = []
+  for detector, titulo in detectors_SURF:
+    keypoints = detector.detect(im)
+    print(titulo, "- Nº de puntos: ", len(keypoints))
+    ims.append((ap1B_draw_circles(im, keypoints, "SURF"), titulo))
+  pintaMI(*ims)
+
 
 
 ## 1 B)
@@ -162,7 +191,7 @@ def ap1B_layer(keypoints):
   # cnt es un contador: diccionario con valor 0 por defecto.
   cnt = collections.Counter()
   for kp in keypoints:
-    cnt[getLayer(kp)] += 1
+    cnt[(getOctave(kp), getLayer(kp))] += 1
 
   return sorted(cnt.items())
 
@@ -203,23 +232,19 @@ def ap1B_draw_circles(im, keypoints, tipo):
 
 ## 1 C)
 
-def ap1C(im, keypoints, tipo, **kwargs):
+def ap1C(im, keypoints, tipo):
   """Obtiene descriptores SIFT y SURF de cada punto
   Argumentos posicionales:
   - im: La imagen
   - keypoints: Puntos
   - tipo: El tipo de detector ("SIFT" o "SURF")
-  Argumentos opcionales:
-  - Cualquiera que podamos pasarle a la función `cv.xfeatures2d.SIFT_create` (o `cv.xfeatures2d.SURF_create`)
   Devuelve: Descriptores de cada punto"""
   if tipo == "SIFT":
-    sift   = cv.xfeatures2d.SIFT_create(**kwargs)
-    _, descriptors = sift.compute(im, keypoints)
-    return descriptors
+    detector = SIFT
   elif tipo == "SURF":
-    surf   = cv.xfeatures2d.SURF_create(**kwargs)
-    _, descriptors = surf.compute(im, keypoints)
-    return descriptors
+    detector = SURF
+
+  return detector.compute(im, keypoints)
 
 
 def ej1ABC(ims):
@@ -231,17 +256,27 @@ def ej1ABC(ims):
     print("Imagen: {title}".format(title = title))
     print(" SIFT")
     puntos_sift = ap1A(im, "SIFT")
+    puntos_sift, descriptores = ap1C(im, puntos_sift, "SIFT")
     print("  Nº de puntos detectados: {sift}".format(sift = len(puntos_sift)))
-    print("  Nº por octava: {num_octave}".format(num_octave = ap1B_octave(puntos_sift, "SIFT")))
-    print("  Nº por capa: {num_layer}".format(num_layer = ap1B_layer(puntos_sift)))
-    print("  Forma de descriptores: {descriptor}".format(descriptor = ap1C(im, puntos_sift, "SIFT").shape))
+
+    num_octave = ap1B_octave(puntos_sift, "SIFT")
+    print("  Nº por octava: {num_octave}".format(num_octave = num_octave))
+
+    print("  Nº por capa:")
+    layers = ap1B_layer(puntos_sift)
+    for octave, _ in num_octave:
+      print("  ", list(filter(lambda x: x[0][0] == octave, layers)))
+
+    print("  Forma de descriptores: {descriptor}".format(descriptor = descriptores.shape))
 
     print(" SURF")
     puntos_surf = ap1A(im, "SURF")
+    puntos_surf, descriptores = ap1C(im, puntos_surf, "SURF")
     print("  Nº de puntos detectados: {surf}".format(surf = len(puntos_surf)))
     print("  Nº por octava: {num_octave}".format(num_octave = ap1B_octave(puntos_surf, "SURF")))
-    print("  Forma de descriptores: {descriptor}".format(descriptor = ap1C(im, puntos_surf, "SURF").shape))
+    print("  Forma de descriptores: {descriptor}".format(descriptor = descriptores.shape))
 
+    espera()
     im_sift = ap1B_draw_circles(im, puntos_sift, 'SIFT')
     im_surf = ap1B_draw_circles(im, puntos_surf, 'SURF')
     pintaMI((im, "Original"), (im_sift,  "SIFT"), (im_surf, "SURF"))
@@ -297,17 +332,17 @@ def ej2(im1, im2):
   - im1, im2: Imágenes a comparar"""
 
   # Obten keypoints y descriptores de SIFT
-  p_im1, p_im2  = ap1A(im1, "SIFT"), ap1A(im2, "SIFT")
-  d_im1, d_im2  = ap1C(im1, p_im1, "SIFT"), ap1C(im2, p_im2, "SIFT")
+  p1, d1  = ap1C(im1, ap1A(im1, "SIFT"), "SIFT")
+  p2, d2  = ap1C(im2, ap1A(im2, "SIFT"), "SIFT")
 
-  possible_matches = [(ap2A_BFCC(d_im1, d_im2), "BruteForce+crossCheck"),
-                      (ap2A_LA2NN(d_im1, d_im2, ratio = 0.6), "Lowe-Average-2NN ratio = 0.5"),
-                      (ap2A_LA2NN(d_im1, d_im2), "Lowe-Average-2NN"),
-                      (ap2A_LA2NN(d_im1, d_im2, ratio = 0.9), "Lowe-Average-2NN ratio = 0.9")]
+  possible_matches = [(ap2A_BFCC(d1, d2), "BruteForce+crossCheck"),
+                      (ap2A_LA2NN(d1, d2, ratio = 0.6), "Lowe-Average-2NN ratio = 0.5"),
+                      (ap2A_LA2NN(d1, d2), "Lowe-Average-2NN"),
+                      (ap2A_LA2NN(d1, d2, ratio = 0.9), "Lowe-Average-2NN ratio = 0.9")]
 
   for matches, title in possible_matches:
     chosen_matches = random.sample(matches, 100)
-    pintaI(cv.drawMatches(im1, p_im1, im2, p_im2,
+    pintaI(cv.drawMatches(im1, p1, im2, p2,
            chosen_matches, None, flags = cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS),
            title)
 
@@ -358,8 +393,8 @@ def ap3B_direct_homographies(ims):
       m = n+1 if n < mid else n-1 # Define homografía a la imagen siguiente (anterior)
 
       # Calcula puntos, descriptores y correspondencias de cada imagen
-      p1, p2 = ap1A(ims[n], "SIFT"), ap1A(ims[m], "SIFT")
-      d1, d2 = ap1C(ims[n], p1, "SIFT"), ap1C(ims[m], p2, "SIFT")
+      p1, d1 = ap1C(ims[n], ap1A(ims[n], "SIFT"), "SIFT")
+      p2, d2 = ap1C(ims[m], ap1A(ims[m], "SIFT"), "SIFT")
       matches = ap2A_LA2NN(d1, d2) # matches
 
       # Divide correspondencias en fuentes y destinos
@@ -388,15 +423,24 @@ def ap3B(M,ims):
 
   for n in range(len(ims)):
     homography = M
+    a = ""
     for m in range(n, mid, 1 if n < mid else -1):
+      a += str(m)
       homography = homography @ homs[m]
+    print(a)
     mosaic_homs.append(homography)
 
   return mosaic_homs
 
 
 def ap3C(canvas, M, ims):
-  """Trasladar imágenes al mosaico"""
+  """Trasladar imágenes al mosaico
+  Argumentos posicionales:
+  - canvas: Canvas en el que pintar
+  - M: Homografía que lleva la imagen central al canvas
+  - ims: Imágenes con las que hacer la homografía
+  Devuelve:
+  El canvas con las imágenes trasladadas"""
 
   H, W, _ = canvas.shape
   homographies = ap3B(M,ims)
@@ -409,43 +453,146 @@ def ap3C(canvas, M, ims):
 
 def ej3(ims, dx = 0, dy = 0):
   """Genera y muestra un mosaico a partir de N = 3 imágenes
-  Asumo que las imágenes están ordenadas conforme al mosaico.
+  Asumo que las imágenes están ordenadas conforme al mosaico
+  (esto es, dos imágenes adyacentes tienen alguna región común)
+  Argumentos posicionales:
+  - ims: Imágenes del mosaico (yosemiteN.jpg)
   """
   canvas, M = ap3A(ims, 600, 1600, dx = dx, dy = dy)
-  pintaI(ap3C(canvas, M, ims), "Canvas")
+  pintaI(ap3C(canvas, M, ims), "yosemite")
 
+
+###############
+# EJERCICIO 4 #
+###############
 
 def ej4(ims):
   """Genera y muestra un mosaico a partir de N = 3 imágenes
   Asumo que las imágenes están ordenadas conforme al mosaico.
+  Argumentos posicionales:
+  - ims: Imágenes del mosaico (mosaico0N.jpg)
   """
   canvas, M = ap3A(ims, 530, 1100)
   pintaI(ap3C(canvas, M, ims), "mosaico")
+
+
+#########
+# BONUS #
+#########
+
+# Ejercicio 3 Bonus
+
+def ap3Bonus_hom(srcs, dsts):
+  """Calcula la homografía dadas 4 correspondencias.
+  Argumentos posicionales:
+  - srcs: Coordenadas de las fuentes (4)
+  - dsts: Coordenadas de los destinos (4)
+  Devuelve: Homografía que lleva srcs[i] en dsts[i]"""
+  v = np.zeros(3)
+  A = None
+
+  # Para cada correspondencia añade las 2 filas del sistema
+  for src, dst in zip(srcs, dsts):
+    src_h = np.append(src, 1)
+    f1 = np.concatenate((src_h, v, -dst[0]*src_h))
+    f2 = np.concatenate((v, src_h, -dst[1]*src_h))
+    if A is None:
+      A = np.vstack((f1, f2))
+    else:
+      A = np.vstack((A, f1, f2))
+
+  # Halla SVD
+  U, s, V = np.linalg.svd(A)
+  sv = np.argmin(s)
+
+  # Toma el vector con menor valor singular asociado
+  return V[sv, :].reshape((3,3))
+
+
+def ap3Bonus(srcs, dsts, max_iters = 1000, p = 0.99):
+  """Implementa de forma eficiente la estimación de una homografía usando RANSAC.
+  Argumentos posicionales:
+  - srcs: Coordenadas de las fuentes
+  - dsts: Coordenadas de los destinos de tal forma que dsts[i] es la correspondencia de srcs[i]
+  Devuelve: La homografía estimada"""
+
+  N = len(srcs)
+  new_srcs = np.array([srcs])
+
+  # Calcula número de inliers inicial
+  idx = np.random.choice(N, 4, replace = False) # Coge 4 índices aleatorios
+  best_H   = ap3Bonus_hom(srcs[idx], dsts[idx]) # Calcula homografía
+  hom_dsts = cv.perspectiveTransform(new_srcs, best_H)[0] # Calcula imágenes de homografía
+  best_inliers = np.sum(np.linalg.norm(dsts-hom_dsts, 2, axis = 1) <= 3) # Cantidad de puntos a dist <= 3
+
+  # Calcula número de iteraciones
+  err = 1 - float(best_inliers)/N
+  if err == 0: # Si encaja con todos los puntos devuelve
+    return best_H
+  elif err == 1: # Si todos los puntos fallan usa el máximo
+    N_reps = max_iters
+  else:
+    N_reps = math.ceil(math.log(1 - p)/math.log(1 - (1 - err)**4.0))
+
+  for _ in range(min(N_reps, max_iters)):
+    idx = np.random.choice(N, 4, replace = False) # Coge 4 índices aleatorios
+    H   = ap3Bonus_hom(srcs[idx], dsts[idx]) # Calcula homografía
+    hom_dsts = cv.perspectiveTransform(new_srcs, H)[0] # Calcula imágenes de homografía
+    inliers = np.sum(np.linalg.norm(dsts-hom_dsts, 2, axis = 1) <= 3) # Cantidad de puntos a dist <= 3
+
+    if inliers > best_inliers: # Si es mejor
+      best_inliers = inliers
+      best_H       = H
+
+  return best_H
+
+
+def ej3Bonus(ims):
+  """Ejemplo de estimación de homografía para RANSAC"""
+  p1, d1 = ap1C(ims[0], ap1A(ims[0], "SIFT"), "SIFT")
+  p2, d2 = ap1C(ims[1], ap1A(ims[1], "SIFT"), "SIFT")
+  matches = ap2A_LA2NN(d1, d2) # matches
+
+  # Divide correspondencias en fuentes y destinos
+  sources = np.array([p1[match.queryIdx].pt for match in matches], dtype = 'float32')
+  dests   = np.array([p2[match.trainIdx].pt for match in matches], dtype = 'float32')
+  H = ap3Bonus(sources, dests) # Calcula la homografía
+
+  # Pinta el resultado
+  width, height = 1200, 700
+  canvas, M  = ap3A(ims[1:], height, width, dx = 200)
+  canvas = cv.warpPerspective(ims[1], M, (width, height), dst = canvas, borderMode = cv.BORDER_TRANSPARENT)
+  canvas = cv.warpPerspective(ims[0], M @ H, (width, height), dst = canvas, borderMode = cv.BORDER_TRANSPARENT)
+  pintaI(canvas, "RANSAC")
+
 
 
 def main():
   """Llama de forma secuencial a la función de cada apartado."""
 
   yosemite = []
-  for n in range(1,8):
+  for n in range(1,4):
     yosemite.append(leeimagen(PATH + "yosemite{n}.jpg".format(n = n), COLOR))
+
+  print("Ejemplo Ejercicio 1:")
+  ej1A(yosemite[0])
+  ej1ABC([(yosemite[0], "Yosemite 0"), (yosemite[1], "Yosemite 1")])
+
+  print("Ejemplo Ejercicio 2: (en visor de imágenes)")
+  ej2(yosemite[0], yosemite[1])
+
+  print("Ejemplo Ejercicio 3: (en visor de imágenes)")
+  ej3(yosemite)
 
   mosaico = []
   for n in range(2,12):
     mosaico.append(leeimagen(PATH + "mosaico{n:03d}.jpg".format(n = n), COLOR))
 
-  # print("Ejemplo Ejercicio 1:")
-  ej1ABC([(yosemite[0], "Yosemite 0"), (yosemite[1], "Yosemite 1")])
+  print("Ejemplo Ejercicio 4: (en visor de imágenes)")
+  ej4(mosaico)
 
-  # print("Ejemplo Ejercicio 2:")
-  #ej2(yosemite[0], yosemite[1])
-
-  # print("Ejemplo Ejercicio 3:")
-  #ej3(yosemite[:4])
-  #ej3(yosemite[4:], dx = 200, dy = 50)
-
-  #print("Ejemplo Ejercicio 4:")
-  #ej4(mosaico)
+  print("Ejemplo Ejercicio 3 BONUS: (en visor de imágenes)")
+  ej3Bonus([yosemite[1], yosemite[2]])
 
 if __name__ == "__main__":
   main()
