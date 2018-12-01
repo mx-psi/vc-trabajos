@@ -26,20 +26,15 @@ citation-style: estilo.csl
 > Identificar las diferencias esenciales entre el plano afín y el plano proyectivo.
 
 El plano afín es el espacio afín de dos dimensiones $\mathbb{R}^2$.
-
 El plano proyectivo se construye como un espacio cociente sobre $\mathbb{R}^3-\{0\}$ en el que identificamos dos vectores si son proporcionales, esto es $u \sim v \iff \exists \lambda \in \mathbb{R}: u = \lambda v$.
 
 Podemos ver el plano afín como un subespacio del plano proyectivo mediante la aplicación $i : \mathbb{R}^2 \to \mathbb{P}^2$, dada por $i(x,y) = (x,y,1)$ (coordenadas homogéneas).
 
-Sus diferencias esenciales más importantes son que el plano proyectivo incluye **puntos del infinito** que no pertenecen al plano afín y que en el proyectivo hay una dualidad entre puntos y rectas que no existe en el plano afín.
+Sus diferencias esenciales más importantes son que el plano proyectivo incluye **puntos del infinito** que no pertenecen al plano afín y que las transformaciones inyectivas en el plano proyectivo incluyen transformaciones en perspectiva.
 
 > ¿Cuáles son sus consecuencias?
 
-Las consecuencias más importantes son que el plano proyectivo tiene una geometría con mejores propiedades: todo par de rectas se corta en exactamente un punto (las paralelas lo hacen en el infinito) y todo teorema sobre puntos puede transformarse en un teorema dual sobre rectas.
-
-En el ámbito de la visión por computador nos permite trabajar de forma más sencilla con transformaciones en perspectiva y representar matricialmente aplicaciones afines, algo que no podemos hacer sin coordenadas homogéneas (una traslación no es una aplicación lineal).
-
-\newpage
+Las consecuencias más importantes son que el plano proyectivo tiene una geometría con mejores propiedades: todo par de rectas se corta en exactamente un punto (las paralelas lo hacen en puntos del infinito) y podemos permite trabajar de forma más sencilla con transformaciones en perspectiva y representar matricialmente aplicaciones proyectivas que no sean afines.
 
 # Pregunta 2
 
@@ -88,7 +83,7 @@ Apoyándonos en la [Pregunta 2] vemos que $x$ se corresponderá a un punto del e
 En tal caso tenemos que el punto del espacio afín es $(x_1/x_3, x_2/x_3)$.
 En otro caso las rectas serán paralelas y no tendrán intersección en el plano afín.
 
-Si las rectas vienen dadas por pares de puntos también podremos aplicar la primera propiedad para calcular en primer lugar los vectores de las rectas.
+Si las rectas vienen dadas por pares de puntos también podremos aplicar la primera propiedad para calcular en primer lugar los vectores que definen las rectas.
 
 
 # Pregunta 4
@@ -102,6 +97,7 @@ Podemos tomar $H_{31} = -3, H_{33} = 2$ para que se de tal igualdad, y rellenar 
 $$H = \left(\begin{matrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ -3 & 0 & 2 \end{matrix}\right) $$
 y podemos verificar que $x' = Hx = (2,0,0)^T \in R_\infty$.
 
+Por último tenemos que verificar que $H$ es invertible, lo que podemos ver sin más que calcular su determinante, $\operatorname{det}(H) = 2 \neq 0$.
 
 
 # Pregunta 5
@@ -111,11 +107,12 @@ y podemos verificar que $x' = Hx = (2,0,0)^T \in R_\infty$.
 Dos coordenadas homogéneas representan el mismo punto si son proporcionales, lo que se traslada a homografías: dos matrices de homografía son equivalentes si son proporcionales.
 
 Los movimientos elementales afines son de la forma:
-$$T_{v} =   \left(\begin{matrix} 1 & 0 & v_1 \\ 0 & 1 & v_2 \\ 0 & 0 & 1 \end{matrix}\right),  
+$$T_{v} =   \left(\begin{matrix} 1 & 0 & v_1 \\ 0 & 1 & v_2 \\ 0 & 0 & 1 \end{matrix}\right),
   G_{\theta} =   \left(\begin{matrix} \cos(\theta) & \sin(\theta) & 0 \\ -\sin(\theta) & \cos(\theta) & 0 \\ 0 & 0 & 1 \end{matrix}\right), 
   S_{r} =   \left(\begin{matrix} r_1 & 0 & 0 \\ 0 & r_2 & 0 \\ 0 & 0 & 1 \end{matrix}\right), 
   C_{s} =   \left(\begin{matrix} 1 & s_1 & 0 \\ s_2 & 1 & 0 \\ 0 & 0 & 1 \end{matrix}\right)$$
 respectivamente son traslación, giro, escala y cizalla y $v, r, s$ son vectores y $\theta$ está en radianes.
+Todo movimiento no afín es una aplicación de tipo proyectivo que no descompongo más.
 
 
 Para obtener la descomposición he usado estas reglas:
@@ -170,7 +167,7 @@ La parte lineal no se correspondía con ninguno de los tipos básicos lo que nos
 > Descomposición de $H_3 = \left(\begin{matrix} 2 & 0 & 3 \\ 0 & 2 & -1 \\ 0 & 1 & 2 \end{matrix}\right) 
     \left(\begin{matrix} 1 & 0,5 & 0 \\ 0,5 & 2 & 0 \\ 0 & 0 & 1 \end{matrix}\right)$
     
-La última fila de la primera matriz no es de la forma $(0, 0, \lambda)$, por lo que es una aplicación afín, sino proyectiva, por lo que no la descomponemos más.
+La última fila de la primera matriz no es de la forma $(0, 0, \lambda)$, por lo que es una aplicación afín, sino proyectiva, por lo que no la descomponemos más[^desc].
 La segunda matriz puede descomponerse en un escalado seguido de una cizalla.
 Por tanto la descomposición queda:
 \begin{align*}
@@ -183,7 +180,6 @@ donde $H$ es una aplicación proyectiva, $r = (1,2)^T, s = (0,5; 0,25)^T$.
     
 Para obtener la descomposición he hallado el escalado que hacía que los elementos de la diagonal quedaran todos a 1.
 
-\newpage
 
 # Pregunta 6
 
@@ -212,7 +208,7 @@ Sólo podemos asumir que se respeta la **colinealidad**, esto es, una homografí
 
 Si $H$ es una homografía y $l$ es el vector de una recta sabemos que todo punto de la recta cumple $x^Tl = 0$.
 Como $H$ es homografía es invertible (y también lo es su traspuesta) luego tenemos que
-$$0 = x^T l = x^T(H^T (H^T)^{-1}) l = (x^T H^T) ((H^T)^{-1} l) = (Hx)^t ((H^T)^{-1} l)$$
+$$0 = x^T l = x^T(H^T (H^T)^{-1}) l = (x^T H^T) ((H^T)^{-1} l) = (Hx)^T ((H^T)^{-1} l)$$
 
 Es decir $x$ pertenece a la recta dada por $l$ si y sólo si $Hx$ pertenece a la recta dada por $(H^T)^{-1} l$,
 luego las homografías llevan rectas en rectas y puntos no alineados en puntos no alineados.
@@ -226,37 +222,63 @@ Por el resultado anterior sabemos que las rectas se transforman de acuerdo $H'$.
 
 Sean $l = (1,0,0)^T, l' = (1,0,1)^T$. Estas rectas se cortan en $l \times l' = (0,-1,0)^T \in R_\infty$, luego en el plano afín son paralelas. Sus imágenes son $H'l = (1,0,0)^T, H'l' = (1,1,1)^T$, que se cortan en $(H'l) \times (H'l') = (0,-1,1)^T$ que es un punto afín, luego las imágenes de estas rectas no son paralelas.
 
+\newpage
 
 # Pregunta 8
 
 > ¿Cuál es la deformación geométrica más fuerte que se puede producir sobre la imagen de un plano por el cambio del punto de vista de la cámara?
 
-Si no trasladamos el punto de vista de la cámara sabemos que la deformación entre dos imágenes se corresponde con una homografía, que es el tipo de deformación geométrica más general en el espacio proyectivo.
-La deformación será mayor cuanto mayor sea el ángulo de rotación.
+Si no trasladamos el punto de vista de la cámara sino que sólo rotamos la cámara o modificamos la distancia focal sabemos que la deformación entre dos imágenes se corresponde con una **homografía**[@HartleyMultipleViewGeometry2004], que es el tipo de deformación geométrica más general en el espacio proyectivo. La deformación será mayor cuanto mayor sea el ángulo de rotación.
 
-Si trasladamos el punto de vista de la cámara entonces la deformación que se produce 
-
+Si trasladamos el punto de vista de la cámara entonces la deformación que se produce no tiene por qué ser necesariamente una homografía y será mayor cuanto mayor sea la traslación del punto de vista.
 
 # Pregunta 9
 
-> ¿Qué información de la imagen usa el detector de Harris para seleccionar puntos? 
+> ¿Qué información de la imagen usa el detector de Harris para seleccionar puntos?
+
+El detector de Harris utiliza información sobre el gradiente de la imagen para detectar esquinas en la imagen.
+Utilizando el gradiente calcula una forma cuadrática $H$ que estima la curvatura de la imagen.
+Esta forma cuadrática es diagonalizable y sus valores propios corresponden con las curvaturas principales de la imagen vista como superficie, que se calculan como los valores propios de la forma cuadrática. Distinguimos casos:
+
+1. si ambas curvaturas principales son pequeñas entonces estamos en una región plana,
+2. si una curvatura es pequeña y la otra no entonces habrá una variación fuerte sólo en un sentido y estaremos ante un borde y
+3. si ninguna curvatura es pequeña entonces habrá una variación fuerte en dos sentidos y estaremos en una esquinas.
+
+Es decir, para detectar una esquina el detector Harris necesita saber si el mínimo de los valores propios no es pequeña, en concreto si es un máximo local mayor que un cierto umbral.
+Para ello aproxima el mínimo de los valores propios con la función
+$$f(x,y) = \frac{\operatorname{det}(H)}{\operatorname{traza}(H)}$$
+
+Es decir, la información que utiliza el detector Harris es la existencia de esquinas a partir de una aproximación de la mínima curvatura principal en cada punto.
 
 > ¿El detector de Harris detecta patrones geométricos o fotométricos?
 
+El detector Harris detecta **patrones geométricos** (esquinas) a partir de el gradiente de la imagen, mediante el procedimiento descrito en la parte anterior.
+
+Es invariante a traslaciones de la intensidad de la forma $I \mapsto I + t$ ya que sólo depende de las derivadas, por lo que es parcialmente invariante a transformaciones en plano fotométrico pero no podemos decir que lo sea totalmente debido al uso del umbral. De este modo en cierto sentido no podemos decir que no haga uso de la información fotométrica.
+
 # Pregunta 10
 
-> ¿Sería adecuado usar como descriptor de un punto Harris los valores de los píxeles de su región de soporte? En caso positivo identificar cuando y justificar la respuesta
+> ¿Sería adecuado usar como descriptor de un punto Harris los valores de los píxeles de su región de soporte?
+> En caso positivo identificar cuando y justificar la respuesta
+
+En general **no** sería adecuado, ya que los valores de los píxeles en la región de soporte son un descriptor que no es invariante a transformaciones geométricas como escalados, rotaciones y otras transformaciones afines ni a cambios en la intensidad como cambios uniformes en la iluminación.
+
+En cambio otros descriptores como SIFT descrito en la [Pregunta 11] sí que poseen una invarianza parcial a este tipo de transformaciones, por lo que un descriptor de este tipo no sería útil en la gran mayoría de los casos.
+
+El único caso en el que sería adecuado es cuando las únicas transformaciones entre las imágenes que queremos relacionar son traslaciones, ya que estas preservan la orientación y tamaño y preservarían los valores de los píxeles (salvo posible ruido de la cámara).
 
 # Pregunta 11
 
 > ¿Qué información de la imagen se codifica en el descriptor de SIFT?
 
-El descriptor de SIFT asigna a cada punto de interés un vector de 128 dimensiones que contiene información sobre las orientaciones del gradiente en el entorno cercano al punto. En concreto el descriptor se calcula a partir de los siguientes:
+El descriptor de SIFT asigna a cada punto de interés un vector de 128 dimensiones que contiene información sobre las orientaciones del gradiente en el entorno cercano al punto. En concreto el descriptor se calcula a partir de los siguientes pasos, descritos en [@LoweDistinctiveImageFeatures2004a, sección 6.1], para los que asumo que tenemos asignada una orientación del punto:
 
-1. Calculamos el gradiente en cada punto de la imagen utilizando filtros de derivadas; nos quedamos con la magnitud y orientación (ángulo) en cada punto
-2. Toma una ventana de dimensiones $16 \times 16$ alrededor del punto que divide en celdas $4 \times 4$.
-3. C
+1. calcula el gradiente en cada punto de la imagen utilizando filtros de derivadas; la capa en la que se ha detectado el punto se utiliza para elegir el nivel de alisado gaussiano. Nos quedamos con la magnitud y orientación (ángulo) en cada punto del gradiente. La orientación se corrige con respecto a la orientación del punto para que el descriptor sea invariante a rotaciones.
+3. toma una ventana de dimensiones $16 \times 16$ alrededor del punto que divide en celdas $4 \times 4$ y
+4. calcula un histograma de las orientaciones agrupándolo en 8 partes.
 
+El descriptor por tanto codifica en este vector los histogramas dando un total de $128 = 4 \times 4 \times 8$.
+La información codificada en el descriptor corresponde con las orientaciones en un entorno del punto corregidas respecto de la orientación principal del punto, información que es invariante a rotaciones y a una gran cantidad de deformaciones geométricas y fotométricas a la imagen, lo que explica su robustez.
 
 # Pregunta 12
 
@@ -309,7 +331,7 @@ Para montar un mosaico nos basta con calcular la homografía que lleva cada imag
 
 Notamos con $H_{ij}$ la homografía que lleva la imagen $i$ en la imagen $j$.
 Calculamos las siguientes homografías: $H_{12}$, $H_{32}, H_{43}$. 
-Para cada homografía necesitamos 4 parejas de 4 puntos, ya que cada punto nos da dos ecuaciones (un total de 8 ecuaciones a las que sumamos una condición de normalización).
+Para cada homografía necesitamos 4 parejas de 4 puntos tales que 3 a 3 no estén alineados, ya que cada punto nos da dos ecuaciones (un total de 8 ecuaciones a las que sumamos una condición de normalización).
 No podemos utilizar menos puntos porque tenemos un total de 9 incógnitas en cada homografía. 
 Esto nos da un total de 12 puntos.
 
@@ -328,18 +350,14 @@ No podemos calcular menos homografías para sacar todas luego este es el mínimo
 
 > En la confección de un mosaico con proyección rectangular es esperable que aparezcan deformaciones de la escena real. ¿Cuáles y por qué? 
 
-Podemos esperar deformaciones dadas por el cambio del punto de vista de la cámara: si por algún motivo trasladamos el punto de vista de la cámara la deformación entre ambos puntos no es necesariamente una homografía, ya que podrían verse nuevas partes de los objetos.
-En este caso los métodos que utilizamos podrían producir deformaciones.
+Podemos esperar deformaciones dadas por el cambio del punto de vista de la cámara: si por algún motivo trasladamos el punto de vista de la cámara la deformación entre ambos puntos no es necesariamente una homografía, ya que podrían verse nuevas partes de los objetos. En este caso los métodos que utilizamos podrían producir deformaciones.
 
-Además, la estimación de las homografías es aproximada; pueden darse errores por fallos en la detección de los puntos de interés o cuando se hallan las correspondencias entre descriptores. Estos errores pueden ser suficientemente pequeños en una sola homografía para ser imperceptibles, pero la composición de homografías puede dar lugar a la acumulación de errores.
-
+Además pueden darse por errores en la estimación de las homografías por fallos en la detección de los puntos o las correspondencias o porque la imagen no está en un plano. Estos errores pueden ser suficientemente pequeños en una sola homografía para ser imperceptibles, pero la composición de homografías puede dar lugar a la acumulación de errores.
 
 > ¿Bajo qué condiciones esas deformaciones podrían desaparecer?
 
 El tamaño de las deformaciones producidas por el movimiento del punto de vista de la cámara es inversamente proporcional a la distancia a la que están los objetos. De esta forma, si intentamos hacer un mosaico con proyección rectangular las deformaciones podrían desaparecer si el mosaico se compone de imágenes de objetos suficientemente lejanos.
 
 Las deformaciones producidas por errores en homografías pueden reducirse ajustando adecuadamente los parámetros de los detectores. Además podemos reducir la acumulación de error utilizando la composición dada en la [Pregunta 14] en lugar de componer directamente de la primera a la última imagen. Por último para este problema en algunos casos podríamos calcular una homografía circular en la que podemos reducir de forma global el error y después pasar a una proyección rectangular.
-
-\newpage
 
 # Bibliografía
